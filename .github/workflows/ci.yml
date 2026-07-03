@@ -1,0 +1,43 @@
+name: UI+API Regression
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  regression:
+    # Linux runner: Safari cannot run here (no Safari/WebKit on Linux), so the
+    # Safari leg of the browser matrix is intentionally excluded via testng-ci.xml.
+    # It only runs locally on macOS via testng-full.xml.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Start Selenium Grid
+        run: docker compose up -d --wait
+
+      - name: Run suite (Chrome/Firefox/Edge + API)
+        env:
+          REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+        run: mvn test -DsuiteFile=testsuites/testng-ci.xml
+
+      - name: Generate Allure report
+        if: always()
+        run: mvn io.qameta.allure:allure-maven:report
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
+
+      - name: Stop Selenium Grid
+        if: always()
+        run: docker compose down
