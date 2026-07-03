@@ -132,6 +132,14 @@
                     <reportVersion>${allure.version}</reportVersion>
                 </configuration>
             </plugin>
+            <!-- Runs the AI failure explainer (com.qa.framework.aiagent.explainer.FailureExplainerRunner)
+                 in CI after `mvn test`, e.g.:
+                 mvn exec:java -Dexec.mainClass=com.qa.framework.aiagent.explainer.FailureExplainerRunner -Dexec.classpathScope=test -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+            </plugin>
         </plugins>
     </build>
 </project>

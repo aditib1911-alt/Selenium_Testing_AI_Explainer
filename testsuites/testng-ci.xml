@@ -36,4 +36,13 @@
             <class name="com.qa.framework.tests.api.RegisterApiTests"/>
         </classes>
     </test>
+
+    <!-- Pure unit tests for the AI failure explainer -- no browser/grid/network required. -->
+    <test name="AIAgent-Unit">
+        <classes>
+            <class name="com.qa.framework.aiagent.explainer.FailureCollectorTests"/>
+            <class name="com.qa.framework.aiagent.explainer.FailureContextExtractorTests"/>
+            <class name="com.qa.framework.aiagent.explainer.FailureExplanationReportTests"/>
+        </classes>
+    </test>
 </suite>

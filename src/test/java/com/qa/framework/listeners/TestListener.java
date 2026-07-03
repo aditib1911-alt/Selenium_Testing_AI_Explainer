@@ -32,5 +32,10 @@ public class TestListener implements ITestListener {
         byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
         Allure.addAttachment(result.getMethod().getMethodName() + "-failure",
                 new ByteArrayInputStream(screenshot));
+
+        // Captured alongside the screenshot so the AI failure explainer can see the
+        // actual DOM state and recommend a specific corrected locator, not just guess from a screenshot.
+        String pageSource = driver.getPageSource();
+        Allure.addAttachment(result.getMethod().getMethodName() + "-dom", "text/html", pageSource, ".html");
     }
 }
