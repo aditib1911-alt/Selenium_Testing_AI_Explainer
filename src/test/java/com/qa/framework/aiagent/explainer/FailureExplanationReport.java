@@ -18,13 +18,19 @@ public final class FailureExplanationReport {
         sb.append(explanations.size())
                 .append(" test failure(s) analyzed. This is read-only analysis -- no code was changed.\n\n");
         for (FailureExplanation explanation : explanations) {
-            sb.append("### ").append(explanation.stableId()).append(" (").append(explanation.suite()).append(")\n");
-            sb.append("- **Category:** ").append(explanation.category()).append('\n');
-            sb.append("- **Confidence:** ").append(explanation.confidence()).append('\n');
-            sb.append("- **Root cause:** ").append(explanation.rootCause()).append('\n');
-            sb.append("- **Recommended fix:** ").append(explanation.recommendedFix()).append('\n');
-            sb.append('\n');
+            sb.append(renderOne(explanation)).append('\n');
         }
+        return sb.toString();
+    }
+
+    /** Formats a single explanation -- reused for both the aggregated report and console output. */
+    public String renderOne(FailureExplanation explanation) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("### ").append(explanation.stableId()).append(" (").append(explanation.suite()).append(")\n");
+        sb.append("- **Category:** ").append(explanation.category()).append('\n');
+        sb.append("- **Confidence:** ").append(explanation.confidence()).append('\n');
+        sb.append("- **Root cause:** ").append(explanation.rootCause()).append('\n');
+        sb.append("- **Recommended fix:** ").append(explanation.recommendedFix()).append('\n');
         return sb.toString();
     }
 

@@ -4,10 +4,6 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   regression:
     # Linux runner: Safari cannot run here (no Safari/WebKit on Linux), so the
@@ -35,29 +31,6 @@ jobs:
       - name: Generate Allure report
         if: always()
         run: mvn io.qameta.allure:allure-maven:report
-
-      # Read-only: analyzes any failed test (UI or API) and writes a root-cause +
-      # recommended-fix report. Never patches source, never opens a branch/PR.
-      - name: AI failure explainer
-        if: always() && github.event_name == 'pull_request'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: >
-          mvn exec:java
-          -Dexec.mainClass=com.qa.framework.aiagent.explainer.FailureExplainerRunner
-          -Dexec.classpathScope=test
-
-      - name: Post failure explanations as a PR comment
-        if: always() && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPORT=target/aiagent/failure-explanations.md
-          if [ -s "$REPORT" ]; then
-            gh pr comment "${{ github.event.pull_request.number }}" --body-file "$REPORT"
-          else
-            echo "No failures to explain -- skipping PR comment."
-          fi
 
       - uses: actions/upload-artifact@v4
         if: always()

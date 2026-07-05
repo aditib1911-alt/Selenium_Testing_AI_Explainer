@@ -10,10 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CI entry point, run via exec-maven-plugin after `mvn test`. Read-only: scans
- * allure-results for failures, asks Claude for a root cause + recommended fix per
- * failure, and writes an aggregated Markdown report for a PR comment step to post.
- * Never patches source, never opens a branch or PR.
+ * Local CLI entry point, run manually via exec-maven-plugin after `mvn test` (see README).
+ * Read-only: scans allure-results for failures and, for each one, asks Claude for a root
+ * cause + recommended fix, printing that explanation to the console as soon as it's ready.
+ * All explanations are also written to a single Markdown file for later reference. Never
+ * patches source, commits, or opens a branch/PR -- purely local, advisory output.
  */
 public final class FailureExplainerRunner {
 
@@ -26,23 +27,29 @@ public final class FailureExplainerRunner {
             return;
         }
 
+        System.out.println(failures.size() + " failed test(s) found. Asking Claude to explain each one...\n");
+
         FailureContextExtractor extractor = new FailureContextExtractor(Path.of(AiAgentConfig.allureResultsDir()));
         ClaudeFailureExplainer explainer = new ClaudeFailureExplainer();
+        FailureExplanationReport report = new FailureExplanationReport();
         List<FailureExplanation> explanations = new ArrayList<>();
 
+        int index = 0;
         for (AllureTestResult failure : failures) {
+            index++;
             FailureContext context = extractor.extract(failure);
+            System.out.println("[" + index + "/" + failures.size() + "] Analyzing " + context.stableId() + "...");
             try {
-                explanations.add(explainer.explain(context));
+                FailureExplanation explanation = explainer.explain(context);
+                explanations.add(explanation);
+                System.out.println(report.renderOne(explanation));
             } catch (Exception e) {
                 System.err.println("Failed to get explanation for " + context.stableId() + ": " + e.getMessage());
             }
         }
 
-        FailureExplanationReport report = new FailureExplanationReport();
-        String rendered = report.render(explanations);
         Path outputPath = Path.of(AiAgentConfig.reportOutputPath());
-        report.writeToFile(rendered, outputPath);
-        System.out.println("Wrote failure explanations to " + outputPath);
+        report.writeToFile(report.render(explanations), outputPath);
+        System.out.println("Wrote " + explanations.size() + " explanation(s) to " + outputPath);
     }
 }
