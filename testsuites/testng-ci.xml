@@ -37,7 +37,7 @@
         </classes>
     </test>
 
-    <!-- Pure unit tests for the AI failure explainer -- no browser/grid/network required. -->
+    <!-- Pure unit tests for the AI failure explainer, no browser/grid/network required. -->
     <test name="AIAgent-Unit">
         <classes>
             <class name="com.qa.framework.aiagent.explainer.FailureCollectorTests"/>
