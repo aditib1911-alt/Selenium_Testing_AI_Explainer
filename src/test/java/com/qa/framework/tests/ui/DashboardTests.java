@@ -108,7 +108,7 @@ public class DashboardTests extends BaseUiTest {
     @Test(description = "DASH-13")
     public void addToCartFromProductDetailPage() {
         ProductDetailPage detailPage = inventoryPage.openProductDetail(BACKPACK_NAME);
-        detailPage.addToCart(BACKPACK_SLUG);
+        detailPage.addToCart();
 
         assertThat(detailPage.isAt()).isTrue();
     }

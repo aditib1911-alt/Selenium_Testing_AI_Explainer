@@ -20,8 +20,8 @@ public class ProductDetailPage extends BasePage {
         return getText(ITEM_NAME);
     }
 
-    public void addToCart(String productSlug) {
-        click(By.cssSelector("[data-test='add-to-cart-" + productSlug + "']"));
+    public void addToCart() {
+        click(By.cssSelector("[data-test='add-to-cart']"));
     }
 
     public InventoryPage backToProducts() {
