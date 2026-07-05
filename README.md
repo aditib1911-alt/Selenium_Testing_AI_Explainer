@@ -8,10 +8,9 @@ Stack: Maven, TestNG (parallel execution), Selenium 4 (Grid), RestAssured, Asser
 
 ## Table of contents
 
+- [Quick start — run this on your own computer](#quick-start--run-this-on-your-own-computer)
 - [Project structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
-- [Running the suite locally](#running-the-suite-locally)
+- [Running a single test class or suite section](#running-a-single-test-class-or-suite-section)
 - [Reports](#reports)
 - [AI failure explainer](#ai-failure-explainer)
 - [Scope boundaries (intentional, not TODOs)](#scope-boundaries-intentional-not-todos)
@@ -19,6 +18,139 @@ Stack: Maven, TestNG (parallel execution), Selenium 4 (Grid), RestAssured, Asser
 - [Test coverage](#test-coverage)
 - [Verifying the acceptance criteria](#verifying-the-acceptance-criteria)
 - [Troubleshooting](#troubleshooting)
+
+## Quick start — run this on your own computer
+
+This section assumes no prior experience. Every command below is meant to be copy-pasted, one
+at a time, into a **terminal**. On macOS, open the terminal via Spotlight (press `Cmd + Space`,
+type `Terminal`, press Enter). On Windows, use **Git Bash** (installed alongside Git in Step 1)
+or **WSL**. On Linux, use your regular terminal app.
+
+### Step 1 — Install the required tools (one-time only)
+
+You need four things installed: **Git**, **Java 17+**, **Maven 3.9+**, and **Docker Desktop**.
+Check what you already have by pasting these one at a time:
+```bash
+git --version
+java -version
+mvn -version
+docker --version
+```
+If a command prints a version number, that tool is already installed — skip it. If it says
+"command not found," install it:
+
+| Tool | What it's for | macOS (with [Homebrew](https://brew.sh)) | Windows / Linux |
+|---|---|---|---|
+| Git | Downloads the project's code | `brew install git` | [git-scm.com/downloads](https://git-scm.com/downloads) |
+| Java 17+ | Runs the test code | `brew install openjdk@21` | [adoptium.net](https://adoptium.net/) (choose version 17 or newer) |
+| Maven 3.9+ | Builds the project and runs the tests | `brew install maven` | [maven.apache.org/download](https://maven.apache.org/download.cgi) |
+| Docker Desktop | Runs the disposable browsers (Chrome/Firefox/Edge) the UI tests drive | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) | Same link |
+
+After installing, **close and reopen your terminal**, then re-run the four check commands above
+to confirm each one now prints a version. Also open the Docker Desktop app once from your
+Applications/Start menu and leave it running in the background — the `docker` command doesn't
+work unless the Docker Desktop app itself is open.
+
+### Step 2 — Download (clone) this project
+
+```bash
+git clone <this-repo-url>
+cd <repo-directory>
+```
+(Replace `<this-repo-url>` with the repository's URL and `<repo-directory>` with the folder name
+Git just created — it's the last part of the URL, without `.git`.)
+
+### Step 3 — Get your personal API keys
+
+This project talks to a real third-party API (reqres.in) that requires a free personal key, so
+you need to sign up and get your own. Nobody else's key will work for you, and this key is never
+shared or committed to the project.
+
+1. **reqres.in key (required)** — every API test fails immediately with a clear error message
+   if this is missing.
+   - Go to https://app.reqres.in/api-keys
+   - Sign up for a free account (or log in)
+   - Copy the API key it gives you
+2. **Anthropic key (optional)** — only needed if you want to run the
+   [AI failure explainer](#ai-failure-explainer), a bonus feature that explains *why* a test
+   failed. Everything else in this project works fine without it.
+   - Go to https://console.anthropic.com/settings/keys
+   - Sign in (or create an account) and click "Create Key"
+   - Copy the key
+
+Keep both keys somewhere safe — treat them like passwords. Don't paste them into chat messages,
+screenshots, or anywhere public.
+
+### Step 4 — Give the project your keys
+
+The project reads keys from a file named `.env`, which is never uploaded to GitHub (it's listed
+in `.gitignore` for exactly that reason — see [Troubleshooting](#troubleshooting) if you're ever
+unsure).
+
+1. Create your own copy of the template:
+   ```bash
+   cp .env.example .env
+   ```
+2. Open the new `.env` file in any text editor (e.g. `open -e .env` on macOS, or open it from
+   Finder/File Explorer) and paste your keys in, so it looks like this:
+   ```dotenv
+   REQRES_API_KEY=paste-your-reqres-key-here
+   ANTHROPIC_API_KEY=paste-your-anthropic-key-here
+   ```
+   (Leave `ANTHROPIC_API_KEY` blank if you skipped the optional step above.)
+3. Save the file, then load it into your current terminal session — you'll need to repeat this
+   one line any time you open a **new** terminal window/tab to run the tests:
+   ```bash
+   export $(grep -v '^#' .env | xargs)
+   ```
+
+### Step 5 — Install the project's dependencies
+
+This downloads all the libraries the project needs and checks that everything compiles.
+It can take a few minutes the first time:
+```bash
+mvn -q compile
+```
+
+### Step 6 — Start the local browser grid
+
+The UI tests drive real browsers running inside Docker containers, managed by a tool called
+Selenium Grid. Start it with:
+```bash
+docker compose up -d --wait
+```
+This may take a minute the first time, as it downloads the browser images. Leave it running —
+you'll shut it down in the last step.
+
+### Step 7 — Run the tests
+
+```bash
+mvn test
+```
+This runs every UI test (in Chrome, Firefox, and Edge) and every API test. It typically takes
+under 5 minutes. You'll see live output in the terminal as each test passes or fails.
+
+### Step 8 — View the results in a readable report
+
+```bash
+mvn io.qameta.allure:allure-maven:report
+```
+Then open `target/site/allure-maven-plugin/index.html` in your browser (double-click it from
+Finder/File Explorer, or run `open target/site/allure-maven-plugin/index.html` on macOS) to see
+a visual pass/fail report.
+
+### Step 9 — Shut down the browser grid when you're done
+
+```bash
+docker compose down
+```
+This frees up the resources Docker was using. Run `docker compose up -d --wait` again next time
+you want to run the tests.
+
+---
+
+That's the whole loop. Once set up, running the suite again later is just: open a terminal in
+this folder, run the `export` command from Step 4, then Steps 6–9.
 
 ## Project structure
 
@@ -42,67 +174,23 @@ Stack: Maven, TestNG (parallel execution), Selenium 4 (Grid), RestAssured, Asser
     └── aiagent/       # Read-only AI failure explainer (see below)
 ```
 
-## Prerequisites
-
-1. **Java 17+** and **Maven 3.9+** installed.
-   ```bash
-   java -version
-   mvn -version
-   ```
-2. **Docker Desktop** (or another Docker engine) — required to run the local Selenium Grid (Chrome/Firefox/Edge nodes).
-3. **A free reqres.in API key** — sign up at https://app.reqres.in/api-keys.
-   Every API test will fail fast with a clear message if this isn't set — it will not silently 401.
-4. **(Optional) Anthropic API key** — only needed if you want to run the [AI failure explainer](#ai-failure-explainer) locally. Get one at https://console.anthropic.com/settings/keys.
-5. **(macOS only, optional) Safari**, for the local-only `testng-full.xml` leg:
-   ```bash
-   sudo safaridriver --enable
-   ```
-   SafariDriver cannot run headless and cannot join the Dockerized Grid (no official Apple-sanctioned container image exists) — it runs as a separate local session on the host.
-
-## Setup
-
-1. **Clone the repo:**
-   ```bash
-   git clone <this-repo-url>
-   cd <repo-directory>
-   ```
-2. **Configure secrets.** Copy the example env file and fill in your keys:
-   ```bash
-   cp .env.example .env
-   ```
-   Then edit `.env`:
-   ```dotenv
-   REQRES_API_KEY=your-reqres-key-here
-   ANTHROPIC_API_KEY=your-anthropic-key-here   # optional, only for the AI failure explainer
-   ```
-   `.env` is git-ignored and never committed. Export these into your shell before running tests (or use a tool like `direnv`/`dotenv` to load them automatically):
-   ```bash
-   export $(grep -v '^#' .env | xargs)
-   ```
-3. **Install dependencies** (also validates the project compiles):
-   ```bash
-   mvn -q compile
-   ```
-
-## Running the suite locally
-
+**(macOS only, optional) Safari** — to also run the local-only `testng-full.xml` leg, which adds
+Safari to the browser matrix:
 ```bash
-# 1. Start the Grid (Chrome, Firefox, Edge nodes)
-docker compose up -d --wait
-
-# 2. Run the same suite CI runs (Chrome/Firefox/Edge + API)
-mvn test
-
-# ...or, locally only, add Safari:
-mvn test -DsuiteFile=testsuites/testng-full.xml
-
-# 3. Tear the Grid down when done
-docker compose down
+sudo safaridriver --enable
 ```
+Then run:
+```bash
+mvn test -DsuiteFile=testsuites/testng-full.xml
+```
+Chrome, Firefox, and Edge run **headless** by default (faster, no display server needed, matches
+CI). Safari always runs headed — Apple does not provide a headless mode for SafariDriver, and it
+cannot join the Dockerized Grid (no official Apple-sanctioned container image exists), so it runs
+as a separate local session on the host instead.
 
-Chrome, Firefox, and Edge run **headless** by default (faster, no display server needed, matches CI). Safari always runs headed — Apple does not provide a headless mode for SafariDriver.
+## Running a single test class or suite section
 
-**Running a single test class or suite section**, e.g. just the login tests:
+e.g. just the login tests:
 ```bash
 mvn test -Dtest=LoginTests
 ```
